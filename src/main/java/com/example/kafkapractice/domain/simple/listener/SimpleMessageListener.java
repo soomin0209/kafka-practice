@@ -14,7 +14,26 @@ public class SimpleMessageListener {
             groupId = "simple-string-group",  // ConsumerFactory의 groupId보다 우선순위 높음
             containerFactory = "stringKafkaListenerContainerFactory"
     )
-    public void consume(String message) {
+    public void consumeV1(String message) {
+        log.info("받은 메시지: {}", message);
+    }
+
+
+    @KafkaListener(
+            topics = "simple-messages",
+            groupId = "simple-string-group",
+            containerFactory = "stringKafkaListenerContainerFactory"
+    )
+    public void consumeV2(String message) {
+        log.info("받은 메시지: {}", message);
+    }
+
+    @KafkaListener(
+            topics = "simple-messages",
+            groupId = "simple-string-group",
+            containerFactory = "stringKafkaListenerContainerFactory"
+    )
+    public void consumeV3(String message) {
         log.info("받은 메시지: {}", message);
     }
 }
