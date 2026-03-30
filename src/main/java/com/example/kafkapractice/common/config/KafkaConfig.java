@@ -59,14 +59,17 @@ public class KafkaConfig {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
 
         // 이 Consumer가 속할 그룹 아이디
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "simple-string-group");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "simple-string-group3");
 
         // key, value를 문자열로 역직렬화
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
 
-        // 처음 시작할 때, 토픽 맨 앞(earliest)부터 읽도록 설정
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+//        // 처음 시작할 때, 토픽 맨 앞(earliest)부터 읽도록 설정
+//        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // 컨슈머 그룹이 처음 시작된 시점 이후에 들어오는 메시지부터 읽도록 설정 (실무에서 더 많이 사용)
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
