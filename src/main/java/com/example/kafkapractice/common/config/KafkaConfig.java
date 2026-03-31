@@ -3,6 +3,8 @@ package com.example.kafkapractice.common.config;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import com.example.kafkapractice.domain.simple.model.kafka.SimpleEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.RoundRobinPartitioner;
@@ -18,6 +20,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 
 @EnableKafka
 @Configuration
@@ -82,6 +86,57 @@ public class KafkaConfig {
         // 3) 에서 만든 consumer 등록 !
         factory.setConsumerFactory(stringConsumerFactory());
 
+        return factory;
+    }
+
+
+    // Kafka 커스텀 객체 사용 → <String, SimpleEvent>
+    @Bean
+    public ProducerFactory<String, SimpleEvent> eventProducerFactory() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
+
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<String, SimpleEvent> eventKafkaTemplate() {
+        return new KafkaTemplate<>(eventProducerFactory());
+    }
+
+    @Bean
+    public ConsumerFactory<String, SimpleEvent> eventConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "simple-event-group");
+
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        // JsonDeserializer → SimpleEvent 변환
+        JacksonJsonDeserializer<SimpleEvent> deserializer = new JacksonJsonDeserializer<>(SimpleEvent.class);
+
+        // 역직렬화 허용할 패키지 지정 (보안 및 타입 안정성)
+        deserializer.addTrustedPackages("com.example.kafkapractice.domain.simple.model.kafka");
+
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                deserializer
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, SimpleEvent> eventKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, SimpleEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        factory.setConsumerFactory(eventConsumerFactory());
         return factory;
     }
 }
