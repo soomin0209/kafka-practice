@@ -19,11 +19,13 @@ public class ManualAckConsumerListener {
         String message = record.value();
         log.info("[Manual ACK 모드] 받은 메시지 : {}", message);
 
+        // 에러가 발생하면 Commit X
         if (message.equals("error")) {
             throw new RuntimeException("kafka 에러 발생");
         }
 
         // 수동 Commit
         ack.acknowledge();
+        log.info("수동 커밋 완료!");
     }
 }
