@@ -22,6 +22,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
@@ -205,5 +206,29 @@ public class KafkaConfig {
         FixedBackOff backOff = new FixedBackOff(1000L, 2L);
 
         return new DefaultErrorHandler(backOff);
+    }
+
+    // + DLT 설정
+    @Bean
+    public CommonErrorHandler kafkaErrorHandlerWithDLT(KafkaTemplate<String, String> stringKafkaTemplate) {
+        // 실패한 레코드를 DLT로 보내는 Recoverer <- 추가
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(stringKafkaTemplate);
+
+        // 1초 간격으로 최대 2번 추가 재시도 (총 3번 시도)
+        FixedBackOff backOff = new FixedBackOff(1000L, 2L);
+
+        // recoverer + backOff 를 사용하는 ErrorHandler
+        return new DefaultErrorHandler(recoverer, backOff);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> errorDemoDLTKafkaListenerContainerFactory(
+            CommonErrorHandler kafkaErrorHandlerWithDLT
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        factory.setConsumerFactory(errorDemoConsumerFactory());
+        factory.setCommonErrorHandler(kafkaErrorHandlerWithDLT);
+        return factory;
     }
 }

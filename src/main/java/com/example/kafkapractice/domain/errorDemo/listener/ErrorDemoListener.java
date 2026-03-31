@@ -11,7 +11,7 @@ public class ErrorDemoListener {
     @KafkaListener(
             topics = "error-demo",
             groupId = "error-demo-group",
-            containerFactory = "errorDemoKafkaListenerContainerFactory"
+            containerFactory = "errorDemoDLTKafkaListenerContainerFactory"  // DLT 설정 추가
     )
     public void consume(String message) {
         log.info("[error-demo] 받은 메시지: {}", message);
@@ -23,4 +23,6 @@ public class ErrorDemoListener {
 
         log.info("정상 처리 완료 : {}", message);
     }
+
+    // 재시도 횟수 초과하여 최종적으로 실패한 데이터 DLT Topic으로 전송!
 }
