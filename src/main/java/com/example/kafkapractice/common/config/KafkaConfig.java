@@ -20,9 +20,12 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 @EnableKafka
 @Configuration
@@ -191,6 +194,16 @@ public class KafkaConfig {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(errorDemoConsumerFactory());
+        factory.setCommonErrorHandler(kafkaErrorHandler());  // 없으면 10번 재시도
         return factory;
+    }
+
+    // ErrorHandler 직접 설정
+    @Bean
+    public CommonErrorHandler kafkaErrorHandler() {
+        // 1초 간격으로 최대 2번 추가 재시도 (총 3번 시도)
+        FixedBackOff backOff = new FixedBackOff(1000L, 2L);
+
+        return new DefaultErrorHandler(backOff);
     }
 }
